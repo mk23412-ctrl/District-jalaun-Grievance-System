@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>राजस्व विभाग शिकायत प्रबन्धन प्रणाली - कालपी, जालौन</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        },
+                        emerald: {
+                            600: '#059669',
+                            700: '#047857',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Hind:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Hind', 'Tiro Devanagari Hindi', sans-serif;
+            background-color: #f1f5f9;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; color: black; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col">
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
+            <div class="bg-navy-900 p-6 text-white text-center relative border-b-4 border-emerald-600">
+                <div class="inline-flex p-3 bg-white/10 rounded-full mb-3">
+                    <i class="fa-solid me-0 fa-landmark text-3xl text-emerald-400"></i>
+                </div>
+                <h1 class="text-2xl font-bold tracking-wide">राजस्व विभाग</h1>
+                <p class="text-sm text-slate-300 mt-1">शिकायत प्रबन्धन पोर्टल - तहसील कालपी (जालौन)</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)" class="p-6 space-y-4">
+                <div id="loginError" class="hidden bg-rose-50 border border-rose-200 text-rose-700 text-sm p-3 rounded-lg text-center">
+                    उपयोगकर्ता नाम या पासवर्ड गलत है!
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">यूज़रनेम (Username)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-user"></i></span>
+                        <input type="text" id="loginUsername" value="sdm_kalpi" required class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:border-transparent outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">पासवर्ड (Password)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" id="loginPassword" value="kalpi123" required class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:border-transparent outline-none">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg transition-colors duration-200 shadow-md">
+                    लॉग इन करें <i class="fa-solid fa-right-to-bracket ml-2"></i>
+                </button>
+                <div class="text-center pt-2 text-xs text-slate-500">
+                    डिफ़ॉल्ट लॉगिन: <span class="font-mono bg-slate-100 px-1 py-0.5 rounded border">sdm_kalpi</span> / <span class="font-mono bg-slate-100 px-1 py-0.5 rounded border">kalpi123</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="appContainer" class="hidden flex-col min-h-screen">
+        
+        <!-- HEADER -->
+        <header class="bg-navy-900 text-white shadow-md no-print sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-emerald-600 p-2 rounded-lg text-white">
+                            <i class="fa-solid fa-scale-balanced text-xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="font-bold text-lg leading-tight">राजस्व शिकायत प्रबन्धन प्रणाली</h1>
+                            <p class="text-xs text-slate-300">उप जिलाधिकारी कार्यालय - कालपी (जालौन)</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="text-right hidden md:block">
+                            <div id="headerUserName" class="text-sm font-semibold text-emerald-400">उप जिलाधिकारी (SDM)</div>
+                            <div id="headerUserRole" class="text-xs text-slate-300">प्रशासनिक अधिकारी (कालपी)</div>
+                        </div>
+                        <button onclick="handleLogout()" class="bg-slate-800 hover:bg-rose-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-slate-700">
+                            <i class="fa-solid fa-power-off mr-1"></i> लॉगआउट
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Sub-nav bar -->
+            <div class="bg-slate-800 border-t border-slate-700/50">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 overflow-x-auto text-xs font-medium py-2">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="px-3 py-1.5 rounded-md bg-emerald-600 text-white flex items-center space-x-2 whitespace-nowrap">
+                        <i class="fa-solid fa-chart-pie"></i><span>डैशबोर्ड</span>
+                    </button>
+                    <button onclick="switchTab('complaints')" id="nav-complaints" class="px-3 py-1.5 rounded-md text-slate-300 hover:bg-slate-700 hover:text-white flex items-center space-x-2 whitespace-nowrap">
+                        <i class="fa-solid fa-list-check"></i><span>शिकायतें की सूची</span>
+                    </button>
+                    <button onclick="switchTab('new-complaint')" id="nav-new-complaint" class="px-3 py-1.5 rounded-md text-slate-300 hover:bg-slate-700 hover:text-white flex items-center space-x-2 whitespace-nowrap">
+                        <i class="fa-solid fa-plus-circle"></i><span>नयी शिकायत दर्ज़ करें</span>
+                    </button>
+                    <button onclick="switchTab('staff')" id="nav-staff" class="px-3 py-1.5 rounded-md text-slate-300 hover:bg-slate-700 hover:text-white flex items-center space-x-2 whitespace-nowrap">
+                        <i class="fa-solid fa-users-gear"></i><span>अधीनस्थ अधिकारी/कर्मचारी</span>
+                    </button>
+                    <button onclick="switchTab('profile')" id="nav-profile" class="px-3 py-1.5 rounded-md text-slate-300 hover:bg-slate-700 hover:text-white flex items-center space-x-2 whitespace-nowrap">
+                        <i class="fa-solid fa-user-gear"></i><span>मेरी प्रोफ़ाइल (एडमिन)</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+            
+            <!-- SECTION 1: DASHBOARD -->
+            <section id="tab-dashboard" class="space-y-6">
+                <!-- Top Alert -->
+                <div class="bg-white border-l-4 border-emerald-600 p-4 rounded-r-lg shadow-sm flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">स्वागत है, <span id="dashGreetingName">उप जिलाधिकारी महोदय</span>!</h2>
+                        <p class="text-sm text-slate-600">तहसील कालपी में वर्तमान लंबित एवं निस्तारित प्रकरणों का संक्षिप्त विवरण।</p>
+                    </div>
+                    <span class="text-xs font-semibold px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200">
+                        <i class="fa-solid fa-clock mr-1"></i> लाइव अपडेटेड
+                    </span>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase">कुल शिकायतें</p>
+                            <h3 id="kpiTotal" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-folder-open"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase">लंबित (Pending)</p>
+                            <h3 id="kpiPending" class="text-2xl font-bold text-amber-600 mt-1">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-hourglass-half"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase">जांच प्रक्रिया में</p>
+                            <h3 id="kpiProgress" class="text-2xl font-bold text-blue-600 mt-1">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-magnifying-glass-chart"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase">निस्तारित (Resolved)</p>
+                            <h3 id="kpiResolved" class="text-2xl font-bold text-emerald-600 mt-1">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="text-sm font-bold text-slate-700 mb-4 border-b pb-2 flex items-center justify-between">
+                            <span><i class="fa-solid fa-chart-pie mr-2 text-emerald-600"></i>शिकायत स्थिति वितरण</span>
+                        </h4>
+                        <div class="h-64 relative flex items-center justify-center">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="text-sm font-bold text-slate-700 mb-4 border-b pb-2 flex items-center justify-between">
+                            <span><i class="fa-solid fa-chart-column mr-2 text-emerald-600"></i>राजस्व मंडल (Circle) अनुसार स्थिति</span>
+                        </h4>
+                        <div class="h-64 relative">
+                            <canvas id="circleChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Complaints Table -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                        <h4 class="font-bold text-slate-700 text-sm"><i class="fa-solid fa-clock-rotate-left mr-2 text-emerald-600"></i>हाल की शिकायतें</h4>
+                        <button onclick="switchTab('complaints')" class="text-xs text-emerald-600 hover:underline font-semibold">सभी देखें &rarr;</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 border-b">
+                                    <th class="p-3">आईडी (ID)</th>
+                                    <th class="p-3">आवेदक</th>
+                                    <th class="p-3">विषय</th>
+                                    <th class="p-3">मंडल</th>
+                                    <th class="p-3">नामित अधिकारी</th>
+                                    <th class="p-3">स्थिति</th>
+                                    <th class="p-3">कार्रवाई</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashRecentTable" class="divide-y divide-slate-100">
+                                <!-- Dynamic JavaScript Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: COMPLAINTS LIST -->
+            <section id="tab-complaints" class="hidden space-y-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-3 items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <h2 class="text-lg font-bold text-slate-800">समस्त शिकायतें</h2>
+                        <span id="complaintCountBadge" class="bg-slate-100 text-slate-600 text-xs font-semibold px-2.5 py-0.5 rounded-full border">0</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input type="text" id="searchFilter" oninput="filterComplaints()" placeholder="नाम, आईडी या विषय से खोजें..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-emerald-600 outline-none w-48 sm:w-64">
+                        <select id="statusFilter" onchange="filterComplaints()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-emerald-600 outline-none">
+                            <option value="ALL">सभी स्थितियां</option>
+                            <option value="लंबित">लंबित (Pending)</option>
+                            <option value="प्रक्रियाधीन">प्रक्रियाधीन (In Progress)</option>
+                            <option value="निस्तारित">निस्तारित (Resolved)</option>
+                        </select>
+                        <select id="circleFilter" onchange="filterComplaints()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-emerald-600 outline-none">
+                            <option value="ALL">सभी राजस्व मंडल</option>
+                            <option value="कालपी सदर">कालपी सदर</option>
+                            <option value="आटा">आटा</option>
+                            <option value="कदौरा">कदौरा</option>
+                            <option value="जोल्हूपुर">जोल्हूपुर</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-800 text-white">
+                                    <th class="p-3">आईडी</th>
+                                    <th class="p-3">दिनांक</th>
+                                    <th class="p-3">आवेदक</th>
+                                    <th class="p-3">मोबाइल</th>
+                                    <th class="p-3">मंडल</th>
+                                    <th class="p-3">विषय</th>
+                                    <th class="p-3">जांच अधिकारी</th>
+                                    <th class="p-3">स्थिति</th>
+                                    <th class="p-3 text-center">कार्रवाई</th>
+                                </tr>
+                            </thead>
+                            <tbody id="complaintsFullTable" class="divide-y divide-slate-200">
+                                <!-- Dynamic JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: NEW COMPLAINT FORM -->
+            <section id="tab-new-complaint" class="hidden max-w-3xl mx-auto">
+                <div class="bg-white rounded-xl border border-slate-200 shadow-md overflow-hidden">
+                    <div class="bg-slate-800 px-6 py-4 border-b border-slate-700 flex justify-between items-center text-white">
+                        <h3 class="font-bold text-base"><i class="fa-solid fa-file-circle-plus text-emerald-400 mr-2"></i>नवीन शिकायत पंजीकृत करें</h3>
+                        <span class="text-xs bg-slate-700 px-2.5 py-1 rounded border border-slate-600">तहसील कालपी</span>
+                    </div>
+                    <form onsubmit="submitNewComplaint(event)" class="p-6 space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">आवेदक का नाम *</label>
+                                <input type="text" id="newApplicantName" required placeholder="उदा. रामेश्वर प्रसाद" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-600 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">मोबाइल नंबर *</label>
+                                <input type="tel" id="newApplicantPhone" required pattern="[0-9]{10}" placeholder="10 अंकीय मोबाइल नंबर" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-600 outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">राजस्व मंडल (Circle) *</label>
+                                <select id="newCircle" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-600 outline-none">
+                                    <option value="कालपी सदर">कालपी सदर</option>
+                                    <option value="आटा">आटा</option>
+                                    <option value="कदौरा">कदौरा</option>
+                                    <option value="जोल्हूपुर">जोल्हूपुर</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">ग्राम / स्थान *</label>
+                                <input type="text" id="newVillage" required placeholder="ग्राम का नाम" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-600 outline-none">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">शिकायत का श्रेणी/विषय *</label>
+                            <select id="newSubject" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-600 outline-none">
+                                <option value="अवैध कब्जा / भूमि विवाद">अवैध कब्जा / भूमि विवाद</option>
+                                <option value="पैमाइश / मेढ़बंदी">पैमाइश / मेढ़बंदी</option>
+                                <option value="नामांतरण (खाता दुरुस्ती)">नामांतरण (खाता दुरुस्ती)</option>
+                                <option value="चकबंदी / खतौनी त्रुटि">चकबंदी / खतौनी त्रुटि</option>
+                                <option value="अन्य शिकायत">अन्य शिकायत</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">शिकायत का विस्तृत विवरण *</label>
+                            <textarea id="newDescription" rows="4" required placeholder="शिकायत का सम्पूर्ण विवरण यहाँ दर्ज करें..." class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-600 outline-none"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">जांच हेतु नामित अधिकारी/कर्मचारी</label>
+                            <select id="newAssignedOfficer" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-600 outline-none">
+                                <!-- Dynamic populated via JS -->
+                            </select>
+                        </div>
+
+                        <div class="pt-2 flex justify-end space-x-3">
+                            <button type="button" onclick="switchTab('complaints')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-xs font-semibold text-slate-700">रद्द करें</button>
+                            <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow">शिकायत दर्ज करें</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- SECTION 4: SUBORDINATE STAFF MANAGEMENT -->
+            <section id="tab-staff" class="hidden space-y-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">अधीनस्थ राजस्व अधिकारी व कर्मचारी सूची</h2>
+                        <p class="text-xs text-slate-500">तहसीलदार, नायब तहसीलदार, राजस्व निरीक्षक (RI) एवं लेखपालों का प्रबन्धन</p>
+                    </div>
+                    <button onclick="openAddStaffModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1 shadow">
+                        <i class="fa-solid fa-user-plus mr-1"></i><span>नया कर्मचारी जोड़ें</span>
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-800 text-white">
+                                    <th class="p-3">कर्मचारी आईडी</th>
+                                    <th class="p-3">नाम</th>
+                                    <th class="p-3">पद (Role)</th>
+                                    <th class="p-3">संबद्ध मंडल (Circle)</th>
+                                    <th class="p-3">मोबाइल नंबर</th>
+                                    <th class="p-3">सौंपी गई शिकायतें</th>
+                                    <th class="p-3 text-center">कार्रवाई</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staffTableBody" class="divide-y divide-slate-200">
+                                <!-- Dynamic Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5: ADMIN PROFILE EDITING -->
+            <section id="tab-profile" class="hidden max-w-2xl mx-auto">
+                <div class="bg-white rounded-xl border border-slate-200 shadow-md overflow-hidden">
+                    <div class="bg-navy-900 px-6 py-4 text-white flex items-center justify-between border-b-2 border-emerald-600">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-lg">
+                                <i class="fa-solid fa-user-tie"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-base" id="profileHeadingName">उप जिलाधिकारी (SDM)</h3>
+                                <p class="text-xs text-slate-300">एडमिनिस्ट्रेटर प्रोफ़ाइल संशोधन</p>
+                            </div>
+                        </div>
+                        <span class="bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-xs px-2.5 py-1 rounded">सक्रिय खाता</span>
+                    </div>
+                    
+                    <form onsubmit="saveAdminProfile(event)" class="p-6 space-y-4">
+                        <div id="profileSuccessAlert" class="hidden p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs rounded-lg">
+                            <i class="fa-solid fa-circle-check mr-1"></i> प्रोफ़ाइल विवरण सफलतापूर्वक अद्यतन (Update) कर दिया गया है!
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">लॉगिन यूज़रनेम (Username) [अपरिवर्तनीय]</label>
+                            <input type="text" id="profileUsername" disabled class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2.5 text-xs text-slate-500 font-mono">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">अधिकारी का नाम (Full Name) *</label>
+                            <input type="text" id="profileName" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-600 outline-none font-semibold text-slate-800">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">पदनाम (Designation)</label>
+                                <input type="text" id="profileDesignation" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-600 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">संपर्क मोबाइल नंबर *</label>
+                                <input type="tel" id="profilePhone" required pattern="[0-9]{10}" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-600 outline-none">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">मुख्यालय / तहसील क्षेत्र</label>
+                            <input type="text" id="profileCircle" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-600 outline-none">
+                        </div>
+
+                        <div class="border-t border-slate-200 pt-4 mt-2">
+                            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2 text-rose-600"><i class="fa-solid fa-key mr-1"></i>पासवर्ड बदलें</h4>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">नया पासवर्ड दर्ज करें</label>
+                                <input type="password" id="profilePassword" placeholder="यदि पासवर्ड बदलना चाहते हैं तभी लिखें" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-600 outline-none">
+                            </div>
+                        </div>
+
+                        <div class="pt-3 flex justify-end">
+                            <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg text-xs font-bold shadow flex items-center space-x-2">
+                                <i class="fa-solid fa-floppy-disk"></i><span>प्रोफ़ाइल अपडेट करें</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="bg-slate-900 text-slate-400 text-xs py-4 text-center border-t border-slate-800 no-print mt-auto">
+            <p>© 2026 राजस्व विभाग, तहसील कालपी (जालौन). सर्वाधिकार सुरक्षित।</p>
+        </footer>
+    </div>
+
+    <!-- MODAL 1: VIEW/EDIT COMPLAINT & REPORT UPLOAD -->
+    <div id="complaintDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+            <div class="bg-slate-800 text-white px-6 py-4 flex justify-between items-center border-b border-slate-700">
+                <div>
+                    <h3 class="font-bold text-sm flex items-center space-x-2">
+                        <span>शिकायत संदर्भ संख्या:</span>
+                        <span id="modalComplaintId" class="text-emerald-400 font-mono bg-slate-700 px-2 py-0.5 rounded"></span>
+                    </h3>
+                </div>
+                <button onclick="closeComplaintModal()" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-6 text-xs flex-1">
+                <!-- Details Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <div><strong class="text-slate-500">आवेदक:</strong> <span id="modalApplicantName" class="font-bold text-slate-800"></span></div>
+                    <div><strong class="text-slate-500">मोबाइल:</strong> <span id="modalApplicantPhone"></span></div>
+                    <div><strong class="text-slate-500">राजस्व मंडल:</strong> <span id="modalCircle"></span></div>
+                    <div><strong class="text-slate-500">ग्राम:</strong> <span id="modalVillage"></span></div>
+                    <div><strong class="text-slate-500">दर्ज तिथि:</strong> <span id="modalDate"></span></div>
+                    <div><strong class="text-slate-500">वर्तमान स्थिति:</strong> <span id="modalStatusBadge"></span></div>
+                    <div class="sm:col-span-2"><strong class="text-slate-500">विषय:</strong> <span id="modalSubject" class="font-semibold text-slate-800"></span></div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-slate-800 mb-1 border-b pb-1">शिकायत का विवरण:</h4>
+                    <p id="modalDescription" class="text-slate-700 bg-slate-50 p-3 rounded border text-xs leading-relaxed whitespace-pre-line"></p>
+                </div>
+
+                <!-- Update Status & Report Section -->
+                <form onsubmit="updateComplaintStatusAndReport(event)" class="bg-emerald-50/50 border border-emerald-200 p-4 rounded-lg space-y-4">
+                    <h4 class="font-bold text-slate-800 flex items-center text-xs">
+                        <i class="fa-solid fa-pen-to-square text-emerald-600 mr-2"></i>निस्तारण एवं आख्या (Report) अद्यतन
+                    </h4>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-semibold mb-1">स्थिति बदलें *</label>
+                            <select id="modalUpdateStatus" class="w-full border rounded p-2 text-xs bg-white outline-none focus:ring-2 focus:ring-emerald-600">
+                                <option value="लंबित">लंबित (Pending)</option>
+                                <option value="प्रक्रियाधीन">प्रक्रियाधीन (In Progress)</option>
+                                <option value="निस्तारित">निस्तारित (Resolved)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1">जांच अधिकारी हस्तांतरित करें</label>
+                            <select id="modalUpdateOfficer" class="w-full border rounded p-2 text-xs bg-white outline-none focus:ring-2 focus:ring-emerald-600">
+                                <!-- Dynamic -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold mb-1">अधिकारी का मंतव्य / टिप्पणियाँ</label>
+                        <textarea id="modalOfficerRemarks" rows="2" placeholder="जांच अधिकारी की टिप्पणी..." class="w-full border rounded p-2 text-xs bg-white outline-none focus:ring-2 focus:ring-emerald-600"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold mb-1">हस्तलिखित आख्या/रिपोर्ट फ़ोटो (Handwritten Report Image)</label>
+                        <input type="file" id="modalReportImageInput" accept="image/*" onchange="previewReportImage(event)" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700">
+                        <div id="imagePreviewContainer" class="mt-2 hidden">
+                            <p class="text-[10px] text-slate-500 mb-1">अपलोड की गई आख्या पूर्वावलोकन:</p>
+                            <img id="imagePreview" src="" class="max-h-48 rounded border border-slate-300 shadow-sm object-contain">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-2 pt-2">
+                        <button type="button" onclick="printOfficialComplaint()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded text-xs font-semibold">
+                            <i class="fa-solid fa-print mr-1"></i> प्रिंट / PDF आख्या
+                        </button>
+                        <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow">
+                            अद्यतन सेव करें
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ADD / EDIT STAFF -->
+    <div id="staffModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
+            <div class="bg-slate-800 text-white px-5 py-3 flex justify-between items-center">
+                <h3 class="font-bold text-sm" id="staffModalTitle">अधिकारी / कर्मचारी सम्पादित करें</h3>
+                <button onclick="closeStaffModal()" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+            </div>
+            <form onsubmit="saveStaffMember(event)" class="p-5 space-y-3 text-xs">
+                <input type="hidden" id="staffEditId">
+                <div>
+                    <label class="block font-bold mb-1 text-slate-700">नाम *</label>
+                    <input type="text" id="staffName" required class="w-full border rounded p-2 outline-none focus:ring-2 focus:ring-emerald-600">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1 text-slate-700">पद (Role) *</label>
+                    <select id="staffRole" required class="w-full border rounded p-2 outline-none focus:ring-2 focus:ring-emerald-600">
+                        <option value="तहसीलदार">तहसीलदार</option>
+                        <option value="नायब तहसीलदार">नायब तहसीलदार</option>
+                        <option value="राजस्व निरीक्षक (RI)">राजस्व निरीक्षक (RI)</option>
+                        <option value="लेखपाल">लेखपाल</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold mb-1 text-slate-700">संबद्ध राजस्व मंडल (Circle) *</label>
+                    <select id="staffCircle" required class="w-full border rounded p-2 outline-none focus:ring-2 focus:ring-emerald-600">
+                        <option value="कालपी सदर">कालपी सदर</option>
+                        <option value="आटा">आटा</option>
+                        <option value="कदौरा">कदौरा</option>
+                        <option value="जोल्हूपुर">जोल्हूपुर</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold mb-1 text-slate-700">मोबाइल नंबर *</label>
+                    <input type="tel" id="staffPhone" required pattern="[0-9]{10}" class="w-full border rounded p-2 outline-none focus:ring-2 focus:ring-emerald-600">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1 text-slate-700">पासवर्ड रीसेट / बदलें</label>
+                    <input type="password" id="staffPassword" placeholder="नया पासवर्ड दर्ज करें" class="w-full border rounded p-2 outline-none focus:ring-2 focus:ring-emerald-600">
+                </div>
+                <div class="flex justify-end space-x-2 pt-3">
+                    <button type="button" onclick="closeStaffModal()" class="px-3 py-1.5 bg-slate-200 text-slate-700 rounded font-semibold">रद्द करें</button>
+                    <button type="submit" class="px-4 py-1.5 bg-emerald-600 text-white rounded font-semibold shadow">सुरक्षित करें</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PRINT VIEW OVERLAY -->
+    <div id="printArea" class="hidden print-only p-8 bg-white text-black font-serif">
+        <div class="text-center border-b-2 border-black pb-4 mb-6">
+            <h1 class="text-2xl font-bold uppercase">कार्यालय उप जिलाधिकारी / परगना मजिस्ट्रेट, कालपी (जालौन)</h1>
+            <h2 class="text-lg font-semibold mt-1">राजस्व शिकायत निस्तारण आख्या</h2>
+        </div>
+        <div id="printContent" class="space-y-4 text-sm">
+            <!-- Dynamic Print Payload -->
+        </div>
+        <div class="mt-16 flex justify-between text-xs">
+            <div class="text-center">
+                <p>प्रस्तुतकर्ता हस्ताक्षर</p>
+            </div>
+            <div class="text-center">
+                <p>हस्ताक्षर एवं मुहर</p>
+                <p class="font-bold mt-10">उप जिलाधिकारी (SDM)</p>
+                <p>तहसील कालपी, जालौन</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // DEFAULT INITIAL STATE DATA
+        const defaultAdmin = {
+            username: "sdm_kalpi",
+            password: "kalpi123",
+            name: "श्री वीरेंद्र कुमार गुप्ता",
+            designation: "उप जिलाधिकारी (SDM)",
+            phone: "9454412345",
+            circle: "तहसील कालपी (समस्त क्षेत्र)"
+        };
+
+        const defaultStaff = [
+            { id: "STF101", name: "श्री राम प्रकाश शुक्ला", role: "तहसीलदार", circle: "कालपी सदर", phone: "9454415001" },
+            { id: "STF102", name: "श्रीमती सुनीता देवी", role: "नायब तहसीलदार", circle: "कदौरा", phone: "9454415002" },
+            { id: "STF103", name: "श्री अजय वर्मा", role: "राजस्व निरीक्षक (RI)", circle: "आटा", phone: "9454415003" },
+            { id: "STF104", name: "श्री धर्मेन्द्र सिंह", role: "लेखपाल", circle: "जोल्हूपुर", phone: "9454415004" }
+        ];
+
+        const defaultComplaints = [
+            {
+                id: "KLP-2026-001",
+                date: "2026-10-01",
+                applicantName: "रामचरण वर्मा",
+                applicantPhone: "9839123456",
+                circle: "कालपी सदर",
+                village: "हीरापुर",
+                subject: "अवैध कब्जा / भूमि विवाद",
+                description: "गाटा संख्या 245 पर विपक्षी द्वारा अवैध रूप से बाउंड्री वाल बनाई जा रही है। मना करने पर विवाद करते हैं। त्वरित बेदखली हेतु निवेदन है।",
+                assignedOfficer: "श्री राम प्रकाश शुक्ला (तहसीलदार)",
+                status: "प्रक्रियाधीन",
+                officerRemarks: "मौका मुआयना किया गया। नाप हेतु राजस्व टीम गठित की गई है।",
+                reportImage: ""
+            },
+            {
+                id: "KLP-2026-002",
+                date: "2026-10-03",
+                applicantName: "शिव बालक प्रजापति",
+                applicantPhone: "9792001122",
+                circle: "कदौरा",
+                village: "कदौरा ग्रामीण",
+                subject: "पैमाइश / मेढ़बंदी",
+                description: "कृषि भूमि की पैमाइश हेतु धारा 24 के अंतर्गत चालान जमा कर दिया है किन्तु अभी तक सीमांकन नहीं किया गया।",
+                assignedOfficer: "श्रीमती सुनीता देवी (नायब तहसीलदार)",
+                status: "लंबित",
+                officerRemarks: "",
+                reportImage: ""
+            },
+            {
+                id: "KLP-2026-003",
+                date: "2026-09-28",
+                applicantName: "महेश कुमार पाण्डेय",
+                applicantPhone: "9415887766",
+                circle: "आटा",
+                village: "उरगांव",
+                subject: "नामांतरण (खाता दुरुस्ती)",
+                description: "पिताजी के देहांत के पश्चात वरासत दर्ज कराने हेतु ऑनलाइन आवेदन किया था, 45 दिन बीतने पर भी आख्या लंबित है।",
+                assignedOfficer: "श्री अजय वर्मा (राजस्व निरीक्षक (RI))",
+                status: "निस्तारित",
+                officerRemarks: "लेखपाल की आख्या प्राप्त कर खतौनी में नाम दर्ज कर निस्तारित किया गया।",
+                reportImage: ""
+            }
+        ];
+
+        // LOCAL STORAGE INITIALIZATION
+        function getAdminData() {
+            return JSON.parse(localStorage.getItem('klp_admin')) || defaultAdmin;
+        }
+
+        function getStaffData() {
+            return JSON.parse(localStorage.getItem('klp_staff')) || defaultStaff;
+        }
+
+        function getComplaintsData() {
+            return JSON.parse(localStorage.getItem('klp_complaints')) || defaultComplaints;
+        }
+
+        let activeComplaintId = null;
+        let statusChartObj = null;
+        let circleChartObj = null;
+
+        // INIT APPLICATION
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem('klp_admin')) localStorage.setItem('klp_admin', JSON.stringify(defaultAdmin));
+            if (!localStorage.getItem('klp_staff')) localStorage.setItem('klp_staff', JSON.stringify(defaultStaff));
+            if (!localStorage.getItem('klp_complaints')) localStorage.setItem('klp_complaints', JSON.stringify(defaultComplaints));
+            
+            // Check session
+            if (sessionStorage.getItem('klp_is_logged') === 'true') {
+                showApp();
+            }
+        });
+
+        // LOGIN / LOGOUT
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('loginUsername').value.trim();
+            const p = document.getElementById('loginPassword').value.trim();
+            const admin = getAdminData();
+
+            if (u === admin.username && p === admin.password) {
+                sessionStorage.setItem('klp_is_logged', 'true');
+                document.getElementById('loginError').classList.add('hidden');
+                showApp();
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        }
+
+        function handleLogout() {
+            sessionStorage.removeItem('klp_is_logged');
+            document.getElementById('appContainer').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('flex');
+            document.getElementById('loginScreen').classList.remove('hidden');
+        }
+
+        function showApp() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            const app = document.getElementById('appContainer');
+            app.classList.remove('hidden');
+            app.classList.add('flex');
+
+            updateHeaderAndGreeting();
+            populateOfficerDropdowns();
+            renderDashboard();
+            renderComplaintsTable();
+            renderStaffTable();
+            loadAdminProfileForm();
+        }
+
+        function updateHeaderAndGreeting() {
+            const admin = getAdminData();
+            document.getElementById('headerUserName').textContent = admin.name;
+            document.getElementById('headerUserRole').textContent = `${admin.designation} (${admin.circle})`;
+            document.getElementById('dashGreetingName').textContent = admin.name;
+            document.getElementById('profileHeadingName').textContent = admin.name;
+        }
+
+        // NAVIGATION TABS
+        function switchTab(tabName) {
+            const tabs = ['dashboard', 'complaints', 'new-complaint', 'staff', 'profile'];
+            tabs.forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                const btn = document.getElementById(`nav-${t}`);
+                if (btn) {
+                    btn.className = "px-3 py-1.5 rounded-md text-slate-300 hover:bg-slate-700 hover:text-white flex items-center space-x-2 whitespace-nowrap";
+                }
+            });
+
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${tabName}`);
+            if (activeBtn) {
+                activeBtn.className = "px-3 py-1.5 rounded-md bg-emerald-600 text-white flex items-center space-x-2 whitespace-nowrap font-bold";
+            }
+
+            if (tabName === 'dashboard') {
+                renderDashboard();
+            } else if (tabName === 'complaints') {
+                renderComplaintsTable();
+            } else if (tabName === 'staff') {
+                renderStaffTable();
+            } else if (tabName === 'profile') {
+                loadAdminProfileForm();
+            }
+        }
+
+        // POPULATE OFFICER DROPDOWNS
+        function populateOfficerDropdowns() {
+            const staff = getStaffData();
+            const newAssigned = document.getElementById('newAssignedOfficer');
+            const modalAssigned = document.getElementById('modalUpdateOfficer');
+
+            let optionsHtml = `<option value="अनिर्णित">-- अधिकारी चुनें --</option>`;
+            staff.forEach(s => {
+                optionsHtml += `<option value="${s.name} (${s.role})">${s.name} - ${s.role} (${s.circle})</option>`;
+            });
+
+            newAssigned.innerHTML = optionsHtml;
+            modalAssigned.innerHTML = optionsHtml;
+        }
+
+        // DASHBOARD & CHARTS
+        function renderDashboard() {
+            const complaints = getComplaintsData();
+            
+            const total = complaints.length;
+            const pending = complaints.filter(c => c.status === 'लंबित').length;
+            const progress = complaints.filter(c => c.status === 'प्रक्रियाधीन').length;
+            const resolved = complaints.filter(c => c.status === 'निस्तारित').length;
+
+            document.getElementById('kpiTotal').textContent = total;
+            document.getElementById('kpiPending').textContent = pending;
+            document.getElementById('kpiProgress').textContent = progress;
+            document.getElementById('kpiResolved').textContent = resolved;
+
+            // Render Recent Table (Max 5)
+            const recentTable = document.getElementById('dashRecentTable');
+            const sorted = [...complaints].reverse().slice(0, 5);
+            
+            if (sorted.length === 0) {
+                recentTable.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">कोई शिकायत उपलब्ध नहीं है।</td></tr>`;
+            } else {
+                recentTable.innerHTML = sorted.map(c => `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-3 font-mono font-bold text-slate-700">${c.id}</td>
+                        <td class="p-3 font-medium">${c.applicantName}</td>
+                        <td class="p-3 text-slate-600 max-w-xs truncate">${c.subject}</td>
+                        <td class="p-3">${c.circle}</td>
+                        <td class="p-3">${c.assignedOfficer || 'अनावंटित'}</td>
+                        <td class="p-3">${getStatusBadge(c.status)}</td>
+                        <td class="p-3">
+                            <button onclick="openComplaintModal('${c.id}')" class="bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-600 hover:text-white px-2 py-1 rounded transition-colors text-[11px]">
+                                देखें / अद्यतन
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            renderCharts(pending, progress, resolved, complaints);
+        }
+
+        function renderCharts(pending, progress, resolved, complaints) {
+            // Doughnut Chart
+            const ctx1 = document.getElementById('statusChart').getContext('2d');
+            if (statusChartObj) statusChartObj.destroy();
+            statusChartObj = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['लंबित', 'प्रक्रियाधीन', 'निस्तारित'],
+                    datasets: [{
+                        data: [pending, progress, resolved],
+                        backgroundColor: ['#f59e0b', '#3b82f6', '#10b981'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+            // Circle Bar Chart
+            const circles = ['कालपी सदर', 'आटा', 'कदौरा', 'जोल्हूपुर'];
+            const circleCounts = circles.map(circle => complaints.filter(c => c.circle === circle).length);
+
+            const ctx2 = document.getElementById('circleChart').getContext('2d');
+            if (circleChartObj) circleChartObj.destroy();
+            circleChartObj = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: circles,
+                    datasets: [{
+                        label: 'कुल शिकायतें',
+                        data: circleCounts,
+                        backgroundColor: '#0f172a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function getStatusBadge(status) {
+            if (status === 'निस्तारित') {
+                return `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold text-[10px] inline-flex items-center"><i class="fa-solid fa-circle-check mr-1"></i>निस्तारित</span>`;
+            } else if (status === 'प्रक्रियाधीन') {
+                return `<span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-semibold text-[10px] inline-flex items-center"><i class="fa-solid fa-spinner fa-spin mr-1"></i>प्रक्रियाधीन</span>`;
+            } else {
+                return `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold text-[10px] inline-flex items-center"><i class="fa-solid fa-clock mr-1"></i>लंबित</span>`;
+            }
+        }
+
+        // COMPLAINTS TABLE & FILTERING
+        function renderComplaintsTable() {
+            filterComplaints();
+        }
+
+        function filterComplaints() {
+            const complaints = getComplaintsData();
+            const search = document.getElementById('searchFilter').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+            const circle = document.getElementById('circleFilter').value;
+
+            const filtered = complaints.filter(c => {
+                const matchesSearch = c.id.toLowerCase().includes(search) || 
+                                      c.applicantName.toLowerCase().includes(search) || 
+                                      c.subject.toLowerCase().includes(search);
+                const matchesStatus = (status === 'ALL') || (c.status === status);
+                const matchesCircle = (circle === 'ALL') || (c.circle === circle);
+                return matchesSearch && matchesStatus && matchesCircle;
+            });
+
+            document.getElementById('complaintCountBadge').textContent = filtered.length;
+            const tbody = document.getElementById('complaintsFullTable');
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400">कोई शिकायत डेटा नहीं मिला।</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(c => `
+                <tr class="hover:bg-slate-50 border-b border-slate-100">
+                    <td class="p-3 font-mono font-bold text-slate-800">${c.id}</td>
+                    <td class="p-3 text-slate-500">${c.date}</td>
+                    <td class="p-3 font-bold text-slate-700">${c.applicantName}</td>
+                    <td class="p-3">${c.applicantPhone}</td>
+                    <td class="p-3"><span class="bg-slate-100 px-2 py-0.5 rounded border">${c.circle}</span></td>
+                    <td class="p-3 font-medium text-slate-800 max-w-xs">${c.subject}</td>
+                    <td class="p-3 text-slate-600">${c.assignedOfficer || 'अनावंटित'}</td>
+                    <td class="p-3">${getStatusBadge(c.status)}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="openComplaintModal('${c.id}')" class="bg-navy-900 hover:bg-slate-700 text-white px-2.5 py-1 rounded text-xs font-medium">
+                            <i class="fa-solid fa-eye mr-1"></i> विवरण / आख्या
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // NEW COMPLAINT SUBMISSION
+        function submitNewComplaint(e) {
+            e.preventDefault();
+            const complaints = getComplaintsData();
+            
+            const newId = `KLP-2026-${String(complaints.length + 1).padStart(3, '0')}`;
+            const today = new Date().toISOString().split('T')[0];
+
+            const newObj = {
+                id: newId,
+                date: today,
+                applicantName: document.getElementById('newApplicantName').value.trim(),
+                applicantPhone: document.getElementById('newApplicantPhone').value.trim(),
+                circle: document.getElementById('newCircle').value,
+                village: document.getElementById('newVillage').value.trim(),
+                subject: document.getElementById('newSubject').value,
+                description: document.getElementById('newDescription').value.trim(),
+                assignedOfficer: document.getElementById('newAssignedOfficer').value,
+                status: "लंबित",
+                officerRemarks: "",
+                reportImage: ""
+            };
+
+            complaints.unshift(newObj);
+            localStorage.setItem('klp_complaints', JSON.stringify(complaints));
+
+            alert(`शिकायत सफलतापूर्वक दर्ज कर ली गई है!\nशिकायत संदर्भ संख्या: ${newId}`);
+            e.target.reset();
+            switchTab('complaints');
+        }
+
+        // COMPLAINT MODAL & HANDWRITTEN REPORT EDITING
+        function openComplaintModal(id) {
+            activeComplaintId = id;
+            const complaints = getComplaintsData();
+            const c = complaints.find(item => item.id === id);
+
+            if (!c) return;
+
+            document.getElementById('modalComplaintId').textContent = c.id;
+            document.getElementById('modalApplicantName').textContent = c.applicantName;
+            document.getElementById('modalApplicantPhone').textContent = c.applicantPhone;
+            document.getElementById('modalCircle').textContent = c.circle;
+            document.getElementById('modalVillage').textContent = c.village;
+            document.getElementById('modalDate').textContent = c.date;
+            document.getElementById('modalStatusBadge').innerHTML = getStatusBadge(c.status);
+            document.getElementById('modalSubject').textContent = c.subject;
+            document.getElementById('modalDescription').textContent = c.description;
+
+            document.getElementById('modalUpdateStatus').value = c.status;
+            document.getElementById('modalUpdateOfficer').value = c.assignedOfficer || "अनिर्णित";
+            document.getElementById('modalOfficerRemarks').value = c.officerRemarks || "";
+
+            const imgPreviewContainer = document.getElementById('imagePreviewContainer');
+            const imgPreview = document.getElementById('imagePreview');
+            
+            if (c.reportImage) {
+                imgPreview.src = c.reportImage;
+                imgPreviewContainer.classList.remove('hidden');
+            } else {
+                imgPreview.src = "";
+                imgPreviewContainer.classList.add('hidden');
+            }
+
+            document.getElementById('modalReportImageInput').value = "";
+            document.getElementById('complaintDetailModal').classList.remove('hidden');
+        }
+
+        function closeComplaintModal() {
+            document.getElementById('complaintDetailModal').classList.add('hidden');
+            activeComplaintId = null;
+        }
+
+        function previewReportImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imagePreview').src = e.target.result;
+                    document.getElementById('imagePreviewContainer').classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateComplaintStatusAndReport(e) {
+            e.preventDefault();
+            if (!activeComplaintId) return;
+
+            const complaints = getComplaintsData();
+            const index = complaints.findIndex(c => c.id === activeComplaintId);
+
+            if (index !== -1) {
+                complaints[index].status = document.getElementById('modalUpdateStatus').value;
+                complaints[index].assignedOfficer = document.getElementById('modalUpdateOfficer').value;
+                complaints[index].officerRemarks = document.getElementById('modalOfficerRemarks').value.trim();
+
+                const imgPreview = document.getElementById('imagePreview');
+                if (!document.getElementById('imagePreviewContainer').classList.contains('hidden') && imgPreview.src) {
+                    complaints[index].reportImage = imgPreview.src;
+                }
+
+                localStorage.setItem('klp_complaints', JSON.stringify(complaints));
+                alert('शिकायत निस्तारण विवरण एवं आख्या सफलतापूर्वक अपडेट हो गई!');
+                closeComplaintModal();
+                renderComplaintsTable();
+            }
+        }
+
+        // PRINT OFFICIAL REPORT
+        function printOfficialComplaint() {
+            if (!activeComplaintId) return;
+            const complaints = getComplaintsData();
+            const c = complaints.find(item => item.id === activeComplaintId);
+            if (!c) return;
+
+            const printContent = document.getElementById('printContent');
+            printContent.innerHTML = `
+                <div class="grid grid-cols-2 gap-4 border p-4 bg-slate-50">
+                    <div><strong>शिकायत आईडी:</strong> ${c.id}</div>
+                    <div><strong>दिनांक:</strong> ${c.date}</div>
+                    <div><strong>आवेदक का नाम:</strong> ${c.applicantName}</div>
+                    <div><strong>संपर्क सूत्र:</strong> ${c.applicantPhone}</div>
+                    <div><strong>राजस्व मंडल:</strong> ${c.circle}</div>
+                    <div><strong>ग्राम:</strong> ${c.village}</div>
+                    <div class="col-span-2"><strong>शिकायत श्रेणी/विषय:</strong> ${c.subject}</div>
+                </div>
+
+                <div class="mt-4 border p-4">
+                    <h3 class="font-bold border-b pb-1 mb-2">शिकायत का मूल विवरण:</h3>
+                    <p class="whitespace-pre-line">${c.description}</p>
+                </div>
+
+                <div class="mt-4 border p-4">
+                    <h3 class="font-bold border-b pb-1 mb-2">जांच अधिकारी एवं स्थिति:</h3>
+                    <p><strong>नामित अधिकारी:</strong> ${c.assignedOfficer || 'अनिर्णित'}</p>
+                    <p><strong>वर्तमान स्थिति:</strong> ${c.status}</p>
+                    <p class="mt-2"><strong>अधिकारी टिप्पणी / निस्तारण आख्या:</strong></p>
+                    <p class="italic text-slate-800">${c.officerRemarks || 'कोई टिप्पणी दर्ज नहीं है।'}</p>
+                </div>
+
+                ${c.reportImage ? `
+                    <div class="mt-4 border p-4 text-center">
+                        <h3 class="font-bold border-b pb-1 mb-2 text-left">हस्तलिखित आख्या/रिपोर्ट की प्रति:</h3>
+                        <img src="${c.reportImage}" class="max-h-96 mx-auto border shadow-sm">
+                    </div>
+                ` : ''}
+            `;
+
+            window.print();
+        }
+
+        // SUBORDINATE STAFF MANAGEMENT
+        function renderStaffTable() {
+            const staff = getStaffData();
+            const complaints = getComplaintsData();
+            const tbody = document.getElementById('staffTableBody');
+
+            tbody.innerHTML = staff.map(s => {
+                const assignedCount = complaints.filter(c => c.assignedOfficer.includes(s.name)).length;
+                return `
+                    <tr class="hover:bg-slate-50 border-b border-slate-100">
+                        <td class="p-3 font-mono font-bold text-slate-700">${s.id}</td>
+                        <td class="p-3 font-bold text-slate-800">${s.name}</td>
+                        <td class="p-3"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200 font-medium">${s.role}</span></td>
+                        <td class="p-3">${s.circle}</td>
+                        <td class="p-3">${s.phone}</td>
+                        <td class="p-3"><span class="bg-amber-50 text-amber-700 px-2 py-0.5 rounded border font-bold">${assignedCount} शिकायतें</span></td>
+                        <td class="p-3 text-center space-x-1">
+                            <button onclick="openEditStaffModal('${s.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded text-xs font-semibold">
+                                <i class="fa-solid fa-pen-to-square mr-1"></i> सम्पादित करें
+                            </button>
+                            <button onclick="deleteStaffMember('${s.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-2 py-1 rounded text-xs font-semibold">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openAddStaffModal() {
+            document.getElementById('staffModalTitle').textContent = "नया अधिकारी/कर्मचारी जोड़ें";
+            document.getElementById('staffEditId').value = "";
+            document.getElementById('staffName').value = "";
+            document.getElementById('staffRole').value = "लेखपाल";
+            document.getElementById('staffCircle').value = "कालपी सदर";
+            document.getElementById('staffPhone').value = "";
+            document.getElementById('staffPassword').value = "";
+            document.getElementById('staffModal').classList.remove('hidden');
+        }
+
+        function openEditStaffModal(id) {
+            const staff = getStaffData();
+            const s = staff.find(item => item.id === id);
+            if (!s) return;
+
+            document.getElementById('staffModalTitle').textContent = "कर्मचारी विवरण सम्पादित करें";
+            document.getElementById('staffEditId').value = s.id;
+            document.getElementById('staffName').value = s.name;
+            document.getElementById('staffRole').value = s.role;
+            document.getElementById('staffCircle').value = s.circle;
+            document.getElementById('staffPhone').value = s.phone;
+            document.getElementById('staffPassword').value = "";
+            document.getElementById('staffModal').classList.remove('hidden');
+        }
+
+        function closeStaffModal() {
+            document.getElementById('staffModal').classList.add('hidden');
+        }
+
+        function saveStaffMember(e) {
+            e.preventDefault();
+            const staff = getStaffData();
+            const editId = document.getElementById('staffEditId').value;
+
+            const name = document.getElementById('staffName').value.trim();
+            const role = document.getElementById('staffRole').value;
+            const circle = document.getElementById('staffCircle').value;
+            const phone = document.getElementById('staffPhone').value.trim();
+
+            if (editId) {
+                const index = staff.findIndex(s => s.id === editId);
+                if (index !== -1) {
+                    staff[index].name = name;
+                    staff[index].role = role;
+                    staff[index].circle = circle;
+                    staff[index].phone = phone;
+                }
+            } else {
+                const newId = `STF${101 + staff.length}`;
+                staff.push({ id: newId, name, role, circle, phone });
+            }
+
+            localStorage.setItem('klp_staff', JSON.stringify(staff));
+            closeStaffModal();
+            populateOfficerDropdowns();
+            renderStaffTable();
+        }
+
+        function deleteStaffMember(id) {
+            if (confirm("क्या आप निश्चित रूप से इस कर्मचारी को हटाना चाहते हैं?")) {
+                let staff = getStaffData();
+                staff = staff.filter(s => s.id !== id);
+                localStorage.setItem('klp_staff', JSON.stringify(staff));
+                populateOfficerDropdowns();
+                renderStaffTable();
+            }
+        }
+
+        // ADMIN PROFILE EDITING WITH FULL SYNCHRONIZATION
+        function loadAdminProfileForm() {
+            const admin = getAdminData();
+            document.getElementById('profileUsername').value = admin.username;
+            document.getElementById('profileName').value = admin.name;
+            document.getElementById('profileDesignation').value = admin.designation;
+            document.getElementById('profilePhone').value = admin.phone;
+            document.getElementById('profileCircle').value = admin.circle;
+            document.getElementById('profilePassword').value = "";
+            document.getElementById('profileSuccessAlert').classList.add('hidden');
+        }
+
+        function saveAdminProfile(e) {
+            e.preventDefault();
+            const admin = getAdminData();
+
+            admin.name = document.getElementById('profileName').value.trim();
+            admin.designation = document.getElementById('profileDesignation').value.trim();
+            admin.phone = document.getElementById('profilePhone').value.trim();
+            admin.circle = document.getElementById('profileCircle').value.trim();
+
+            const newPass = document.getElementById('profilePassword').value.trim();
+            if (newPass) {
+                admin.password = newPass;
+            }
+
+            localStorage.setItem('klp_admin', JSON.stringify(admin));
+
+            // Synchronize UI
+            updateHeaderAndGreeting();
+
+            // Show Feedback
+            const alertBox = document.getElementById('profileSuccessAlert');
+            alertBox.classList.remove('hidden');
+            setTimeout(() => alertBox.classList.add('hidden'), 4000);
+        }
+    </script>
+</body>
+</html>
